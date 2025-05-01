@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const endpointsJson = require("./endpoints.json");
-const { getTopics } = require("./controllers");
+const { getTopics, getArticleById } = require("./controllers");
 const { handlePsqlErrors, handleCustomErrors, handleServerErrors } = require("./errors");
 
 
@@ -16,6 +16,9 @@ app.get("/api", (req, res) => {
 });
 
 app.get("/api/topics", getTopics);
+
+app.get("/api/articles/:article_id", getArticleById);
+
 
 app.all("*", (req, res) => {
   res.status(404).send({ msg: "Route not found" });

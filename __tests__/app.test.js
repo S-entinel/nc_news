@@ -1,8 +1,4 @@
 const endpointsJson = require("../endpoints.json");
-/* Set up your test imports here */
-
-/* Set up your beforeEach & afterAll functions here */
-
 const db = require("../db/connection")
 const seed = require("../db/seeds/seed")
 const data = require("../db/data/test-data")
@@ -72,6 +68,46 @@ describe("GET /api/topics", () => {
       .expect(404)
       .then(({ body }) => {
         expect(body.msg).toBe("Route not found");
+      });
+  });
+});
+
+
+describe("GET /api/articles/:article_id", () => {
+  test("200: Responds with an article object with the correct properties", () => {
+    return request(app)
+      .get("/api/articles/1")
+      .expect(200)
+      .then(({ body }) => {
+        const { article } = body;
+        expect(article).toMatchObject({
+          article_id: 1,
+          title: expect.any(String),
+          topic: expect.any(String),
+          author: expect.any(String),
+          body: expect.any(String),
+          created_at: expect.any(String),
+          votes: expect.any(Number),
+          article_img_url: expect.any(String),
+        });
+      });
+  });
+
+  test("404: Responds with an error when article does not exist", () => {
+    return request(app)
+      .get("/api/articles/999")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Article not found for ID: 999");
+      });
+  });
+
+  test("400: Responds with an error when article_id is not a number", () => {
+    return request(app)
+      .get("/api/articles/not-an-id")
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request");
       });
   });
 });
