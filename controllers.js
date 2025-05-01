@@ -1,5 +1,5 @@
 const db = require("./db/connection");
-const {fetchTopics} = require("./models")
+const {fetchTopics, fetchArticleById} = require("./models")
 
 exports.getTopics = (req, res, next) => {
     fetchTopics()
@@ -8,3 +8,12 @@ exports.getTopics = (req, res, next) => {
       })
       .catch(next);
   };
+
+exports.getArticleById = (req, res, next) => {
+    const {article_id: articleId} = req.params
+    fetchArticleById(articleId).then((article) => {
+        res.status(200).send({article})
+    })
+    .catch(next);
+
+}
