@@ -4,6 +4,7 @@ const seed = require("../db/seeds/seed")
 const data = require("../db/data/test-data")
 const request = require ("supertest")
 const app = require("../app");
+require('jest-sorted');
 
 
 beforeEach (() => {
@@ -108,6 +109,53 @@ describe("GET /api/articles/:article_id", () => {
       .expect(400)
       .then(({ body }) => {
         expect(body.msg).toBe("Bad request");
+      });
+  });
+});
+
+
+
+describe.only("GET /api/articles", () => {
+  test("200: Responds with an array of article objects", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        const { articles } = body;
+        expect(Array.isArray(articles)).toBe(true);
+        expect(articles.length).toBeGreaterThan(0);
+        articles.forEach((article) => {
+          expect(article).toMatchObject({
+            article_id: expect.any(Number),
+            title: expect.any(String),
+            topic: expect.any(String),
+            author: expect.any(String),
+            created_at: expect.any(String),
+            votes: expect.any(Number),
+            article_img_url: expect.any(String),
+            comment_count: expect.any(Number),
+          });
+          expect(article).not.toHaveProperty("body");
+        });     
+      });
+  });
+
+  test("200: Articles are sorted by created_at in descending order", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        const { articles } = body;
+        expect(articles).toBeSortedBy("created_at", { descending: true });
+      });
+  });
+
+  test("404: Responds with an error when the path is not found", () => {
+    return request(app)
+      .get("/api/articlez")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Route not found");
       });
   });
 });
