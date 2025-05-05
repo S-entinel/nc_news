@@ -77,3 +77,46 @@ exports.fetchArticleById = (articleId) => {
       });
 
   }
+
+
+  exports.addCommentToArticle = (article_id, username, body) => {
+
+    return db
+      .query('SELECT title FROM articles WHERE article_id = $1', [article_id])
+      .then(({ rows }) => {
+        if (rows.length === 0) {
+          return Promise.reject({
+            status: 404,
+            msg: `Article not found for ID: ${article_id}`,
+          });
+        }
+                
+        return db
+          .query('SELECT * FROM users WHERE username = $1', [username])
+          .then(({ rows: userRows }) => {
+            if (userRows.length === 0) {
+              return Promise.reject({
+                status: 404,
+                msg: `User not found: ${username}`,
+              });
+            }
+            
+            return db
+              .query(
+                `INSERT INTO comments 
+                  (article_id, author, body, votes, created_at) 
+                VALUES 
+                  ($1, $2, $3, 0, NOW()) 
+                RETURNING comment_id, author, body, votes, created_at;`,
+                [article_id, username, body]
+              )
+              .then(({ rows: commentRows }) => {
+                console.log(commentRows[0])
+                return {
+                  ...commentRows[0],
+                  article_id: Number(article_id)
+                };
+              });
+          });
+      });
+  };

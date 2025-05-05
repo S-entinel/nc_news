@@ -1,5 +1,6 @@
 const db = require("./db/connection");
-const {fetchTopics, fetchArticleById, fetchArticles, fetchCommentsById} = require("./models")
+const {fetchTopics, fetchArticleById, fetchArticles, 
+  fetchCommentsById,addCommentToArticle} = require("./models")
 
 exports.getTopics = (req, res, next) => {
     fetchTopics()
@@ -33,3 +34,21 @@ exports.getCommentsById = (req, res, next) => {
     }
   ).catch(next);
 }
+
+exports.postCommentToArticle = (req, res, next) => {
+  const { article_id } = req.params;
+  const { username, body } = req.body;
+  
+  if (!username || !body) {
+    return next({
+      status: 400,
+      msg: "Bad request: missing required fields"
+    });
+  }
+  
+  addCommentToArticle(article_id, username, body)
+    .then((comment) => {
+      res.status(201).send({ comment });
+    })
+    .catch(next);
+};
