@@ -1,6 +1,6 @@
 const db = require("./db/connection");
 const {fetchTopics, fetchArticleById, fetchArticles, 
-  fetchCommentsById,addCommentToArticle} = require("./models")
+  fetchCommentsById,addCommentToArticle, updateArticleVotes} = require("./models")
 
 exports.getTopics = (req, res, next) => {
     fetchTopics()
@@ -49,6 +49,31 @@ exports.postCommentToArticle = (req, res, next) => {
   addCommentToArticle(article_id, username, body)
     .then((comment) => {
       res.status(201).send({ comment });
+    })
+    .catch(next);
+};
+
+exports.patchArticleVotes = (req, res, next) => {
+  const { article_id } = req.params;
+  const { inc_votes } = req.body;
+  
+  if (inc_votes === undefined) {
+    return next({
+      status: 400,
+      msg: "Bad request: missing inc_votes"
+    });
+  }
+  
+  if (typeof inc_votes !== 'number') {
+    return next({
+      status: 400,
+      msg: "Bad request: inc_votes must be a number"
+    });
+  }
+  
+  updateArticleVotes(article_id, inc_votes)
+    .then((article) => {
+      res.status(200).send({ article });
     })
     .catch(next);
 };
