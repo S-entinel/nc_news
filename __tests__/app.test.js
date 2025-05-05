@@ -224,3 +224,113 @@ describe("GET /api/articles/:article_id/comments", () => {
       });
   });
 });
+
+describe("POST /api/articles/:article_id/comments", () => {
+  test("201: Adds a comment to an article and responds with the posted comment", () => {
+    const newComment = {
+      username: "butter_bridge",
+      body: "This is a test comment"
+    };
+    
+    return request(app)
+      .post("/api/articles/1/comments")
+      .send(newComment)
+      .expect(201)
+      .then(({ body }) => {
+        const { comment } = body;
+        
+        expect(comment).toMatchObject({
+          comment_id: expect.any(Number),
+          author: "butter_bridge",
+          body: "This is a test comment",
+          votes: 0,
+          created_at: expect.any(String),
+          article_id: 1
+        });
+      });
+  });
+
+  test("400: Responds with an error when request body is missing required fields", () => {
+    // Missing username
+    const invalidComment1 = {
+      body: "This is a test comment"
+    };
+    
+    const promise1 = request(app)
+      .post("/api/articles/1/comments")
+      .send(invalidComment1)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request: missing required fields");
+      });
+    
+    const invalidComment2 = {
+      username: "butter_bridge"
+    };
+    
+    const promise2 = request(app)
+      .post("/api/articles/1/comments")
+      .send(invalidComment2)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request: missing required fields");
+      });
+    
+    const invalidComment3 = {};
+    
+    const promise3 = request(app)
+      .post("/api/articles/1/comments")
+      .send(invalidComment3)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request: missing required fields");
+      });
+    
+    return Promise.all([promise1, promise2, promise3]);
+  });
+
+  test("404: Responds with an error when article does not exist", () => {
+    const newComment = {
+      username: "butter_bridge",
+      body: "This is a test comment"
+    };
+    
+    return request(app)
+      .post("/api/articles/999/comments")
+      .send(newComment)
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Article not found for ID: 999");
+      });
+  });
+
+  test("404: Responds with an error when username does not exist", () => {
+    const newComment = {
+      username: "non_existent_user",
+      body: "This is a test comment"
+    };
+    
+    return request(app)
+      .post("/api/articles/1/comments")
+      .send(newComment)
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("User not found: non_existent_user");
+      });
+  });
+
+  test("400: Responds with an error when article_id is not a number", () => {
+    const newComment = {
+      username: "butter_bridge",
+      body: "This is a test comment"
+    };
+    
+    return request(app)
+      .post("/api/articles/not-an-id/comments")
+      .send(newComment)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request");
+      });
+  });
+});
