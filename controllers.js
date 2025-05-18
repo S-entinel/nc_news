@@ -1,6 +1,6 @@
 const { getDefaultAutoSelectFamilyAttemptTimeout } = require("net");
 const db = require("./db/connection");
-const {fetchTopics, fetchArticleById, fetchArticles, 
+const {fetchTopics, fetchArticleById, fetchArticles, fetchUsers, 
   fetchCommentsById,addCommentToArticle, updateArticleVotes, removeCommentById} = require("./models")
 
 exports.getTopics = (req, res, next) => {
@@ -11,14 +11,6 @@ exports.getTopics = (req, res, next) => {
       .catch(next);
   };
 
-exports.getArticleById = (req, res, next) => {
-    const {article_id: articleId} = req.params
-    fetchArticleById(articleId).then((article) => {
-        res.status(200).send({ article })
-    })
-    .catch(next);
-}
-
 exports.getArticles = (req, res, next) => {
   fetchArticles()
       .then((articles) => {
@@ -26,6 +18,23 @@ exports.getArticles = (req, res, next) => {
       })
       .catch(next);
   };
+
+  exports.getUsers = (req, res, next) => {
+    fetchUsers()
+        .then((users) => {
+          res.status(200).send({ users });
+        })
+        .catch(next);
+    };
+
+
+  exports.getArticleById = (req, res, next) => {
+    const {article_id: articleId} = req.params
+    fetchArticleById(articleId).then((article) => {
+        res.status(200).send({ article })
+    })
+    .catch(next);
+}
 
 exports.getCommentsById = (req, res, next) => {
   const {article_id: articleId} = req.params

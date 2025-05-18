@@ -74,6 +74,62 @@ describe("GET /api/topics", () => {
 });
 
 
+describe("GET /api/users", () => {
+  test("200: Responds with an array of user objects", () => {
+    return request(app)
+      .get("/api/users")
+      .expect(200)
+      .then(({ body }) => {
+        const { users } = body;
+        expect(Array.isArray(users)).toBe(true);
+        expect(users.length).toBeGreaterThan(0);
+        
+        users.forEach((user) => {
+          expect(user).toHaveProperty("username");
+          expect(user).toHaveProperty("name");
+          expect(user).toHaveProperty("avatar_url");
+        });
+      });
+  });
+
+  test("200: Each user has the correct properties and data types", () => {
+    return request(app)
+      .get("/api/users")
+      .expect(200)
+      .then(({ body }) => {
+        const { users } = body;
+        
+        users.forEach((user) => {
+          expect(typeof user.username).toBe("string");
+          expect(typeof user.name).toBe("string");
+          expect(typeof user.avatar_url).toBe("string");
+        });
+      });
+  });
+
+  test("200: Response includes expected user data", () => {
+    return request(app)
+      .get("/api/users")
+      .expect(200)
+      .then(({ body }) => {
+        const { users } = body;
+        
+        const expectedUser = {
+          username: "butter_bridge",
+          name: "jonny",
+          avatar_url: "https://www.healthytherapies.com/wp-content/uploads/2016/06/Lime3.jpg"
+        };
+        
+        expect(users).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining(expectedUser)
+          ])
+        );
+      });
+  });
+});
+
+
 describe("GET /api/articles/:article_id", () => {
   test("200: Responds with an article object with the correct properties", () => {
     return request(app)
