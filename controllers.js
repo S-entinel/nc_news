@@ -1,7 +1,8 @@
 const { getDefaultAutoSelectFamilyAttemptTimeout } = require("net");
 const db = require("./db/connection");
-const {fetchTopics, fetchArticleById, fetchArticles, fetchUsers, 
-  fetchCommentsById,addCommentToArticle, updateArticleVotes, removeCommentById} = require("./models")
+const {fetchTopics, fetchArticleById, fetchUsers, 
+  fetchCommentsById,addCommentToArticle, updateArticleVotes, removeCommentById,
+  fetchAllArticles} = require("./models")
 
 exports.getTopics = (req, res, next) => {
     fetchTopics()
@@ -11,13 +12,13 @@ exports.getTopics = (req, res, next) => {
       .catch(next);
   };
 
-exports.getArticles = (req, res, next) => {
-  fetchArticles()
-      .then((articles) => {
-        res.status(200).send({ articles });
-      })
-      .catch(next);
-  };
+// exports.getArticles = (req, res, next) => {
+//   fetchArticles()
+//       .then((articles) => {
+//         res.status(200).send({ articles });
+//       })
+//       .catch(next);
+//   };
 
   exports.getUsers = (req, res, next) => {
     fetchUsers()
@@ -94,4 +95,14 @@ exports.deleteCommentById = (req, res, next) => {
       res.status(204).send()
     }
   ).catch(next);
+};
+
+exports.getAllArticles = (req, res, next) => {
+  const { sort_by, order } = req.query;
+  
+  fetchAllArticles(sort_by, order)
+    .then((articles) => {
+      res.status(200).send({ articles });
+    })
+    .catch(next);
 };
