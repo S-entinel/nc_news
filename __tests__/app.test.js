@@ -170,7 +170,6 @@ describe("GET /api/articles/:article_id", () => {
 });
 
 
-
 // describe("GET /api/articles", () => {
 //   test("200: Responds with an array of article objects", () => {
 //     return request(app)
@@ -589,6 +588,67 @@ describe("GET /api/articles (sorting queries)", () => {
       .expect(400)
       .then(({ body }) => {
         expect(body.msg).toBe("Invalid order parameter: invalid_order");
+      });
+  });
+});
+
+describe("GET /api/articles (topic query)", () => {
+  test("200: Returns all articles when no topic is specified", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        const { articles } = body;
+        expect(articles.length).toBeGreaterThan(1);
+        // Articles should have different topics
+        const topics = [...new Set(articles.map(article => article.topic))];
+        expect(topics.length).toBeGreaterThan(1);
+      });
+  });
+
+  test("200: Returns only articles with the specified topic", () => {
+    return request(app)
+      .get("/api/articles?topic=mitch")
+      .expect(200)
+      .then(({ body }) => {
+        const { articles } = body;
+        expect(articles.length).toBeGreaterThan(0);
+        articles.forEach(article => {
+          expect(article.topic).toBe("mitch");
+        });
+      });
+  });
+
+  test("200: Returns an empty array for a topic that exists but has no articles", () => {
+    return request(app)
+      .get("/api/articles?topic=paper")
+      .expect(200)
+      .then(({ body }) => {
+        const { articles } = body;
+        expect(articles).toEqual([]);
+      });
+  });
+
+  test("404: Returns an error for a non-existent topic", () => {
+    return request(app)
+      .get("/api/articles?topic=nonexistent")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Topic not found: nonexistent");
+      });
+  });
+
+  test("200: Works with topic and sorting parameters together", () => {
+    return request(app)
+      .get("/api/articles?topic=mitch&sort_by=title&order=asc")
+      .expect(200)
+      .then(({ body }) => {
+        const { articles } = body;
+        expect(articles.length).toBeGreaterThan(0);
+        articles.forEach(article => {
+          expect(article.topic).toBe("mitch");
+        });
+        expect(articles).toBeSortedBy("title", { ascending: true });
       });
   });
 });
