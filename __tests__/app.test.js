@@ -122,7 +122,6 @@ describe("GET /api/articles", () => {
       .expect(200)
       .then(({ body }) => {
         const { articles } = body;
-        console.log(articles)
         expect(Array.isArray(articles)).toBe(true);
         expect(articles.length).toBeGreaterThan(0);
         articles.forEach((article) => {
@@ -416,6 +415,41 @@ describe("PATCH /api/articles/:article_id", () => {
     return request(app)
       .patch("/api/articles/not-an-id")
       .send(voteUpdate)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request");
+      });
+  });
+});
+
+describe("DELETE /api/comments/:comment_id", () => {
+  test("204: Deletes the specified comment and responds with no content", () => {
+    return request(app)
+      .delete("/api/comments/1")
+      .expect(204)
+      .then(({ body }) => {
+
+        expect(body).toEqual({});
+        
+        return db.query("SELECT * FROM comments WHERE comment_id = 1");
+      })
+      .then(({ rows }) => {
+        expect(rows).toHaveLength(0);
+      });
+  });
+
+  test("404: Responds with an error when comment does not exist", () => {
+    return request(app)
+      .delete("/api/comments/999")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Comment not found for ID: 999");
+      });
+  });
+
+  test("400: Responds with an error when comment_id is not a number", () => {
+    return request(app)
+      .delete("/api/comments/not-a-comment")
       .expect(400)
       .then(({ body }) => {
         expect(body.msg).toBe("Bad request");

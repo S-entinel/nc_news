@@ -1,6 +1,7 @@
+const { getDefaultAutoSelectFamilyAttemptTimeout } = require("net");
 const db = require("./db/connection");
 const {fetchTopics, fetchArticleById, fetchArticles, 
-  fetchCommentsById,addCommentToArticle, updateArticleVotes} = require("./models")
+  fetchCommentsById,addCommentToArticle, updateArticleVotes, removeCommentById} = require("./models")
 
 exports.getTopics = (req, res, next) => {
     fetchTopics()
@@ -76,4 +77,12 @@ exports.patchArticleVotes = (req, res, next) => {
       res.status(200).send({ article });
     })
     .catch(next);
+};
+
+exports.deleteCommentById = (req, res, next) => {
+  const { comment_id } = req.params;
+  removeCommentById(comment_id).then(() => {
+      res.status(204).send()
+    }
+  ).catch(next);
 };
