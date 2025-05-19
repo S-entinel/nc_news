@@ -170,50 +170,50 @@ describe("GET /api/articles/:article_id", () => {
 });
 
 
-// describe("GET /api/articles", () => {
-//   test("200: Responds with an array of article objects", () => {
-//     return request(app)
-//       .get("/api/articles")
-//       .expect(200)
-//       .then(({ body }) => {
-//         const { articles } = body;
-//         expect(Array.isArray(articles)).toBe(true);
-//         expect(articles.length).toBeGreaterThan(0);
-//         articles.forEach((article) => {
-//           expect(article).toMatchObject({
-//             article_id: expect.any(Number),
-//             title: expect.any(String),
-//             topic: expect.any(String),
-//             author: expect.any(String),
-//             created_at: expect.any(String),
-//             votes: expect.any(Number),
-//             article_img_url: expect.any(String),
-//             comment_count: expect.any(Number),
-//           });
-//           expect(article).not.toHaveProperty("body");
-//         });     
-//       });
-//   });
+describe("GET /api/articles", () => {
+  test("200: Responds with an array of article objects", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        const { articles } = body;
+        expect(Array.isArray(articles)).toBe(true);
+        expect(articles.length).toBeGreaterThan(0);
+        articles.forEach((article) => {
+          expect(article).toMatchObject({
+            article_id: expect.any(Number),
+            title: expect.any(String),
+            topic: expect.any(String),
+            author: expect.any(String),
+            created_at: expect.any(String),
+            votes: expect.any(Number),
+            article_img_url: expect.any(String),
+            comment_count: expect.any(Number),
+          });
+          expect(article).not.toHaveProperty("body");
+        });     
+      });
+  });
 
-//   test("200: Articles are sorted by created_at in descending order", () => {
-//     return request(app)
-//       .get("/api/articles")
-//       .expect(200)
-//       .then(({ body }) => {
-//         const { articles } = body;
-//         expect(articles).toBeSortedBy("created_at", { descending: true });
-//       });
-//   });
+  test("200: Articles are sorted by created_at in descending order", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        const { articles } = body;
+        expect(articles).toBeSortedBy("created_at", { descending: true });
+      });
+  });
 
-//   test("404: Responds with an error when the path is not found", () => {
-//     return request(app)
-//       .get("/api/articlez")
-//       .expect(404)
-//       .then(({ body }) => {
-//         expect(body.msg).toBe("Route not found");
-//       });
-//   });
-// });
+  test("404: Responds with an error when the path is not found", () => {
+    return request(app)
+      .get("/api/articlez")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Route not found");
+      });
+  });
+});
 
 
 describe("GET /api/articles/:article_id/comments", () => {
@@ -649,6 +649,113 @@ describe("GET /api/articles (topic query)", () => {
           expect(article.topic).toBe("mitch");
         });
         expect(articles).toBeSortedBy("title", { ascending: true });
+      });
+  });
+});
+
+describe("GET /api/articles/:article_id (comment_count)", () => {
+  test("200: Article response now includes a comment_count property", () => {
+    return request(app)
+      .get("/api/articles/1")
+      .expect(200)
+      .then(({ body }) => {
+        const { article } = body;
+        
+        expect(article).toMatchObject({
+          article_id: 1,
+          title: expect.any(String),
+          topic: expect.any(String),
+          author: expect.any(String),
+          body: expect.any(String),
+          created_at: expect.any(String),
+          votes: expect.any(Number),
+          article_img_url: expect.any(String),
+          comment_count: expect.any(Number)
+        });
+      });
+  });
+
+  test("200: Returns correct comment_count for an article with multiple comments", () => {
+
+    return db.query(
+      `SELECT COUNT(*)::INT AS expected_count 
+       FROM comments 
+       WHERE article_id = 1`
+    )
+    .then(({ rows }) => {
+      const expectedCount = rows[0].expected_count;
+      
+      return request(app)
+        .get("/api/articles/1")
+        .expect(200)
+        .then(({ body }) => {
+          const { article } = body;
+          expect(article.comment_count).toBe(expectedCount);
+        });
+    });
+  });
+
+  test("200: Returns comment_count of 0 for an article with no comments", () => {
+
+    return db.query(
+      `SELECT articles.article_id
+       FROM articles
+       LEFT JOIN comments ON articles.article_id = comments.article_id
+       GROUP BY articles.article_id
+       HAVING COUNT(comments.comment_id) = 0
+       LIMIT 1`
+    )
+    .then(({ rows }) => {
+
+      if (rows.length > 0) {
+        const articleIdWithNoComments = rows[0].article_id;
+        
+        return request(app)
+          .get(`/api/articles/${articleIdWithNoComments}`)
+          .expect(200)
+          .then(({ body }) => {
+            const { article } = body;
+            expect(article.comment_count).toBe(0);
+          });
+      } else {
+
+        return db.query(
+          `INSERT INTO articles 
+           (title, topic, author, body, created_at, votes, article_img_url) 
+           VALUES 
+           ('Test Article No Comments', 'mitch', 'butter_bridge', 'Test body', NOW(), 0, 'http://example.com/image.jpg')
+           RETURNING article_id`
+        )
+        .then(({ rows }) => {
+          const newArticleId = rows[0].article_id;
+          
+          return request(app)
+            .get(`/api/articles/${newArticleId}`)
+            .expect(200)
+            .then(({ body }) => {
+              const { article } = body;
+              expect(article.comment_count).toBe(0);
+            });
+        });
+      }
+    });
+  });
+
+  test("404: Still returns appropriate error for non-existent article ID", () => {
+    return request(app)
+      .get("/api/articles/999")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Article not found for ID: 999");
+      });
+  });
+
+  test("400: Still returns appropriate error for invalid article ID", () => {
+    return request(app)
+      .get("/api/articles/not-an-id")
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request");
       });
   });
 });
